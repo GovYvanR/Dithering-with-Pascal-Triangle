@@ -3,9 +3,14 @@ import numpy as np
 import random, sys
 import PascalTriangle
 
+#Work in uint8 or int16 mode  
+#Configure Threshold (255 default uint8)
+#Entry to theshold modulation control (here fixed)
+Threshold = 255
+
 # Generates Pascal's triangle, normalizes its rows, calculates the
 # cumulative sum for each row, and returns the resulting triangle.
-cumulative_row_triangle = PascalTriangle.get_cumulative_sum(256)
+cumulative_row_triangle = PascalTriangle.get_cumulative_sum(max(Threshold + 1, 512 - (Threshold + 1)))
 
 # Convert cumulative_row_triangle to a NumPy array
 cumulative_row_triangle_array = np.array(cumulative_row_triangle, dtype=object)
@@ -40,6 +45,10 @@ def process_image(image_path):
         # Generate empty memory array with the same size as the image
         halftone = np.zeros((height, width), dtype=np.uint8)
 
+        # Copying the array with a new type (int16)
+        # Thresholding type change
+        new_array = img_array.astype(np.int16)
+
         # Generate a random number array of the same size as the image
         random_numbers = np.random.rand(height, width)    
 
@@ -49,9 +58,9 @@ def process_image(image_path):
             start_pixel = 1 if direction == 1 else width - 2  # Start pixel index
             end_pixel = width - 1 if direction == 1 else 0  # End pixel index
             for x in range(start_pixel, end_pixel, direction):
-                pixel_x = img_array[y, x]   # Current pixel
-                pixel_a = img_array[y - 1, x] # Top neighbor Pixel
-                pixel_b = img_array[y, x - direction] # Left or Right serpentine neighbor Pixel
+                pixel_x = new_array[y, x]   # Current pixel
+                pixel_a = new_array[y - 1, x] # Top neighbor Pixel
+                pixel_b = new_array[y, x - direction] # Left or Right serpentine neighbor Pixel
                 
                 # Diff of Neighbor Pixels
                 #       B
@@ -59,7 +68,7 @@ def process_image(image_path):
                 pixel_diff = max(pixel_a, pixel_b) - min(pixel_a, pixel_b)
 
                 # Retrieve Corresponding Cumulative Row Sum
-                cum_row_sum = cumulative_row_triangle_array[pixel_diff]
+                cum_row_sum = cumulative_row_triangle_array[abs(pixel_diff)]
 
                 # Find the index where the cumulative distribution first exceeds random number
                 index = np.argmax(cum_row_sum > random_numbers[y, x])
@@ -71,11 +80,11 @@ def process_image(image_path):
                 pixel_x = pixel_x + index
 
                 # Perform Thresholding
-                if pixel_x > 255:
+                if pixel_x > Threshold:
                     halftone[y, x] = 255
-                    img_array[y, x] = pixel_x - 255
+                    new_array[y, x] = pixel_x - 255
                 else:
-                    img_array[y, x] = pixel_x
+                    new_array[y, x] = pixel_x
     
 
     except FileNotFoundError:
@@ -90,8 +99,7 @@ if __name__ == "__main__":
         print("Usage: python PCADithering.py <image_path>")
         sys.exit(1)
 
-    #image_path = 'IMAGE_PNG/Lion.png'
-    image_path = 'all_pixels_rnd_31.png'
+    image_path = 'IMAGE_PNG/Lion.png'
     #image_path = sys.argv[1]
     halftone = process_image(image_path)
     
@@ -101,4 +109,4 @@ if __name__ == "__main__":
     # Save the image as a PNG file
     filename_with_extension = image_path.split('/')[-1]
     filename_without_extension = filename_with_extension.split('.')[0]  
-    halftone.save(filename_without_extension + '_HT.png')
+    halftone.save(filename_without_extension + '_HT3.png')
