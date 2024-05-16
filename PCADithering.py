@@ -3,13 +3,15 @@ import numpy as np
 import random, sys
 import PascalTriangle
 
-#Work in uint8 or int16 mode  
-#Configure Threshold (255 default uint8)
-#Entry to theshold modulation control (here fixed)
+#Allow Threshold Moludaltion (uin8 vs int8 simulation) 
+#Entry to theshold modulation control (fixed here)
 Threshold = 255
 
 # Generates Pascal's triangle, normalizes its rows, calculates the
 # cumulative sum for each row, and returns the resulting triangle.
+# Estimate Overflow if Threshold different from 255
+# Given Threshold Modulation (or jsut set at 127) the number of possibilities
+# grow and the size of Pascal's Triangle as well
 cumulative_row_triangle = PascalTriangle.get_cumulative_sum(max(Threshold + 1, 512 - (Threshold + 1)))
 
 # Convert cumulative_row_triangle to a NumPy array
@@ -47,7 +49,10 @@ def process_image(image_path):
 
         # Copying the array with a new type (int16)
         # Thresholding type change
-        new_array = img_array.astype(np.int16)
+        if Threshold == 255:
+            new_array = img_array.astype(np.uint8)
+        else:
+            new_array = img_array.astype(np.int16)
 
         # Generate a random number array of the same size as the image
         random_numbers = np.random.rand(height, width)    
@@ -82,7 +87,7 @@ def process_image(image_path):
                 # Perform Thresholding
                 if pixel_x > Threshold:
                     halftone[y, x] = 255
-                    new_array[y, x] = pixel_x - 255
+                    new_array[y, x] = pixel_x - Threshold
                 else:
                     new_array[y, x] = pixel_x
     
@@ -95,12 +100,12 @@ def process_image(image_path):
     return halftone
 
 if __name__ == "__main__":
-    if len(sys.argv) != 1:  #2
+    if len(sys.argv) != 2:
         print("Usage: python PCADithering.py <image_path>")
         sys.exit(1)
 
-    image_path = 'IMAGE_PNG/Lion.png'
-    #image_path = sys.argv[1]
+    # image_path = 'IMAGE_PNG/Lion.png'
+    image_path = sys.argv[1]
     halftone = process_image(image_path)
     
     # Convert the halftone NumPy array to an image
@@ -109,4 +114,4 @@ if __name__ == "__main__":
     # Save the image as a PNG file
     filename_with_extension = image_path.split('/')[-1]
     filename_without_extension = filename_with_extension.split('.')[0]  
-    halftone.save(filename_without_extension + '_HT3.png')
+    halftone.save(filename_without_extension + '_HT.png')
