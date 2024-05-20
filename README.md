@@ -10,4 +10,12 @@ play with threshol modulation and negative values < maybe > the halftone result 
 
 Note: it's not completly discrete since it sample from an random uniform distribution U(0, 1), but.. ;) 
 
-python3.9 PCADithering.py IMAGE_PNG/Lion.png
+#USAGE
+PCADithering.py <image_path> <mode> <thr>
+
+#Dithering
+python3.9 PCADithering.py IMAGE_PNG/Lion.png 1 255 
+#Smoothing with temporal dependencies  
+python3.9 PCADithering.py IMAGE_PNG/Lion.png 2 255 
+#Smoothing without temporal dependencies  ß
+python3.9 PCADithering.py IMAGE_PNG/Lion.png 3 255 
